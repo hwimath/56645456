@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>휘매쓰 연산 챌린지!</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async
+        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #ece9e6, #ffffff);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .hidden {
+            display: none;
+        }
+        #start-screen, #game-screen, #end-screen {
+            width: 100%;
+            max-width: 800px;
+            padding: 20px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+        #start-screen h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .difficulty-button {
+            padding: 15px 30px;
+            margin: 10px;
+            font-size: 1.2em;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            background-color: #4CAF50;
+            color: white;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        .difficulty-button:hover {
+            background-color: #45a049;
+            transform: scale(1.05);
+        }
+        #game-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+            color: #333;
+        }
+        #energy-bar {
+            width: 100%;
+            height: 25px;
+            background-color: #ddd;
+            border-radius: 12.5px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.2);
+        }
+        #energy {
+            height: 100%;
+            width: 100%;
+            background-color: #76c7c0;
+            transition: width 0.1s linear;
+        }
+        #question-number {
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+        #question {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+        }
+        .option-button {
+            display: block;
+            width: 100%;
+            max-width: 500px;
+            padding: 15px;
+            margin: 10px auto;
+            font-size: 1.2em;
+            cursor: pointer;
+            border: 2px solid #4CAF50;
+            border-radius: 8px;
+            background-color: white;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+        .option-button:hover {
+            background-color: #f1f1f1;
+            border-color: #45a049;
+        }
+        #result {
+            font-size: 1.5em;
+            margin-top: 20px;
+            color: #333;
+        }
+        #restart-button {
+            padding: 15px 30px;
+            margin-top: 30px;
+            font-size: 1.2em;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            background-color: #2196F3;
+            color: white;
+            transition: background-color 0.3s;
+        }
+        #restart-button:hover {
+            background-color: #0b7dda;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Start Screen -->
+    <div id="start-screen">
+        <h1>휘매쓰 연산 챌린지!</h1>
+        <p>난이도를 선택하세요:</p>
+        <button class="difficulty-button" data-difficulty="최상">최상</button>
+        <button class="difficulty-button" data-difficulty="상">상</button>
+        <button class="difficulty-button" data-difficulty="중">중</button>
+        <button class="difficulty-button" data-difficulty="하">하</button>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen" class="hidden">
+        <div id="game-info">
+            <div id="score">점수: 0</div>
+            <div id="lives">남은 기회: 3</div>
+            <div id="game-time">총 시간: 0초</div>
+        </div>
+        <div id="energy-bar">
+            <div id="energy"></div>
+        </div>
+        <div id="question-number"></div>
+        <div id="question"></div>
+        <div id="options"></div>
+    </div>
+
+    <!-- End Screen -->
+    <div id="end-screen" class="hidden">
+        <h2>게임 종료!</h2>
+        <p id="final-score">최종 점수: 0</p>
+        <p id="correct-count">정답 수: 0</p>
+        <p id="wrong-count">오답 수: 0</p>
+        <p id="final-time">총 시간: 0초</p>
+        <button id="restart-button">다시 시작</button>
+    </div>
+
+    <script>
+        // 문제 데이터
+        const quizData = [
+            {
+                question: '일차방정식 \\(a(x-2) = 6\\)의 해가 \\(x = -1\\)이고, \\( -12(x-1) + bx = 10 \\)의 해가 \\(x = 2\\)일 때, \\(ab\\)의 값을 구하라.',
+                answer: -22
+            },
+            {
+                question: '일차방정식 \\(a(x-1) = 8\\)의 해가 \\(x = 3\\)이고 \\( -18(x-2) + bx = 12 \\)의 해가 \\(x = 4\\)일 때, \\(a + b\\)의 값을 구하라.',
+                answer: 16
+            },
+            {
+                question: '두 방정식 \\( 3x + a(x-2) = 4 \\)와 \\( \\frac{1}{2}x + bx = 0.9 \\)의 해가 \\(x = 3\\)일 때, \\( a^2 - 2ab \\)의 값을 구하라.',
+                answer: 23
+            },
+            {
+                question: '\\(x\\)에 대한 일차방정식 \\(2.6x + a = -0.8x - 7.8\\)의 해가 \\(x = -2\\)일 때, 다음 일차방정식 \\( \\frac{x}{6} - a = \\frac{x+5}{8} \\)의 해를 구하여라.',
+                answer: -9
+            },
+            {
+                question: '\\(x\\)에 대한 일차방정식 \\(8 + x = 6 - ax\\)의 해가 \\(x = 1\\)일 때, \\(x\\)에 대한 일차방정식 \\(a(x+2) = 4x + 1\\)의 해를 구하여라.',
+                answer: -1
+            },
+            {
+                question: '\\(x\\)에 대한 일차방정식 \\(a(2x-1) = -x - 7\\)의 해가 \\(x = 3\\)일 때, 일차방정식 \\( 0.5x + a = 0.2x - 0.8 \\)의 해를 구하여라.',
+                answer: 4
+            },
+            {
+                question: '\\(x\\)에 대한 일차방정식 \\(ax + 2 = 4(x-2)\\)의 해가 \\(x = 5\\)일 때, \\(x\\)에 대한 일차방정식 \\(4x - 3 = ax\\)의 해를 구하여라. (단, \\(a\\)는 상수)',
+                answer: 1.5
+            },
+            {
+                question: '\\(x\\)에 대한 일차방정식 \\(3x + a(x-1) = 13\\)의 해가 \\(x = 3\\)일 때, 일차방정식 \\(2.4x + a = 1.7x - 2.2\\)의 해를 구하여라.',
+                answer: -6
+            },
+            {
+                question: '다음 두 일차방정식의 해가 같을 때, 상수 \\(a\\)의 값을 구하여라.\n\\[1.2x + 0.8 = 0.8x + 0.9 \\quad \\text{와} \\quad 1.2x + 0.5 = \\frac{4x + a}{5}\\]',
+                answer: 3
+            },
+            {
+                question: '다음 두 일차방정식의 해가 같을 때, 상수 \\(a\\)의 값을 구하여라.\n\\[2x - 16 = 4(x - 3) \\quad \\text{와} \\quad ax - 3 = 4x + 5\\]',
+                answer: 0
+            },
+            {
+                question: '다음 두 일차방정식의 해가 같을 때, 상수 \\(a\\)의 값을 구하여라.\n\\[4(x + 3) = 18 + x \\quad \\text{와} \\quad a(2x - 5) = 2x + 5\\]',
+                answer: -9
+            },
+            {
+                question: '다음 두 일차방정식의 해가 같을 때, 상수 \\(a\\)의 값을 구하여라.\n\\[6x - 15 = 4x - 3 \\quad \\text{와} \\quad 2(x + a) = 5x\\]',
+                answer: 9
+            },
+            {
+                question: '다음 두 일차방정식의 해가 같을 때, 상수 \\(a\\)의 값을 구하여라.\n\\[5x - 3 = 18 - 2x \\quad \\text{와} \\quad ax - 5(x - 1) = 8\\]',
+                answer: 6
+            },
+            {
+                question: '다음 두 일차방정식의 해가 같을 때, 상수 \\(a\\)의 값을 구하여라.\n\\[3x - 10 + 5x = 6 \\quad \\text{와} \\quad ax + 5 = \\frac{3}{4}x - \\frac{1}{2}\\]',
+                answer: 0.5
+            },
+            {
+                question: '다음 두 일차방정식의 해가 같을 때, 상수 \\(a\\)의 값을 구하여라.\n\\[4x + 1 = 3(x - 2) \\quad \\text{와} \\quad 2x = 35 - ax\\]',
+                answer: -7
+            },
+            {
+                question: '다음 두 일차방정식의 해가 같을 때, 상수 \\(a\\)의 값을 구하여라.\n\\[\\frac{3}{2}x - 2 = 4x + \\frac{1}{2} \\quad \\text{와} \\quad ax + 7 = -x + a\\]',
+                answer: 3
+            },
+            {
+                question: '다음 두 일차방정식의 해가 같을 때, 상수 \\(a\\)의 값을 구하여라.\n\\[2.6x - 1 = 0.8x - 7.8 \\quad \\text{와} \\quad \\frac{a(x+4)}{3} - \\frac{2 - ax}{4} - \\frac{1}{6}\\]',
+                answer: 4
+            },
+            {
+                question: '다음 두 일차방정식의 해가 같을 때, 상수 \\(a\\)의 값을 구하여라.\n\\[-5(x + 3) = -2x - 12 \\quad \\text{와} \\quad \\frac{a(x+2)}{3} - \\frac{2 - ax}{4} = \\frac{1}{6}\\]',
+                answer: 8
+            }
+        ];
+
+        // 난이도 설정
+        const difficultySettings = {
+            '최상': { time: 20, points: 20 },
+            '상': { time: 30, points: 15 },
+            '중': { time: 40, points: 13 },
+            '하': { time: null, points: 10 }
+        };
+
+        // 변수 초기화
+        let difficulty;
+        let timePerQuestion;
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let correctCount = 0;
+        let wrongCount = 0;
+        let lives = 3;
+        let totalGameTime = 0;
+        let questionTimer;
+        let overallTimer;
+        let speedMultiplier = 1;
+
+        // DOM 요소 가져오기
+        const startScreen = document.getElementById('start-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const endScreen = document.getElementById('end-screen');
+        const difficultyButtons = document.querySelectorAll('.difficulty-button');
+        const questionNumberElement = document.getElementById('question-number');
+        const questionElement = document.getElementById('question');
+        const optionsElement = document.getElementById('options');
+        const resultElement = document.getElementById('result');
+        const restartButton = document.getElementById('restart-button');
+        const scoreDisplay = document.getElementById('score');
+        const livesDisplay = document.getElementById('lives');
+        const gameTimeDisplay = document.getElementById('game-time');
+        const energyBar = document.getElementById('energy');
+        const finalScore = document.getElementById('final-score');
+        const correctCountDisplay = document.getElementById('correct-count');
+        const wrongCountDisplay = document.getElementById('wrong-count');
+        const finalTime = document.getElementById('final-time');
+
+        // 시작 화면에서 난이도 선택
+        difficultyButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                difficulty = button.getAttribute('data-difficulty');
+                timePerQuestion = difficultySettings[difficulty].time;
+                score = 0;
+                correctCount = 0;
+                wrongCount = 0;
+                lives = 3;
+                totalGameTime = 0;
+                speedMultiplier = 1;
+                currentQuestionIndex = 0;
+                updateDisplay();
+                startScreen.classList.add('hidden');
+                gameScreen.classList.remove('hidden');
+                startOverallTimer();
+                showQuestion();
+            });
+        });
+
+        // 전체 게임 시간 타이머
+        function startOverallTimer() {
+            overallTimer = setInterval(() => {
+                totalGameTime++;
+                gameTimeDisplay.textContent = `총 시간: ${totalGameTime}초`;
+            }, 1000);
+        }
+
+        // 에너지 바 초기화
+        function resetEnergyBar() {
+            energyBar.style.width = '100%';
+        }
+
+        // 에너지 바 및 시간 제한 설정
+        function startQuestionTimer() {
+            if (timePerQuestion) {
+                let duration = (timePerQuestion / speedMultiplier) * 1000;
+                let startTime = Date.now();
+                questionTimer = setInterval(() => {
+                    let elapsed = Date.now() - startTime;
+                    let percentage = Math.max(100 - (elapsed / duration) * 100, 0);
+                    energyBar.style.width = `${percentage}%`;
+                    if (elapsed >= duration) {
+                        clearInterval(questionTimer);
+                        handleTimeout();
+                    }
+                }, 100);
+            } else {
+                energyBar.style.width = '100%';
+            }
+        }
+
+        // 점수 및 생명 업데이트
+        function updateDisplay() {
+            scoreDisplay.textContent = `점수: ${score}`;
+            livesDisplay.textContent = `남은 기회: ${lives}`;
+        }
+
+        // 문제 표시
+        function showQuestion() {
+            resetEnergyBar();
+            startQuestionTimer();
+
+            const currentQuiz = quizData[currentQuestionIndex];
+            questionNumberElement.textContent = `문제 ${currentQuestionIndex + 1} / ${quizData.length}`;
+            questionElement.innerHTML = currentQuiz.question;
+
+            // 선택지 생성
+            const options = generateOptions(currentQuiz.answer);
+            optionsElement.innerHTML = '';
+            options.forEach(option => {
+                const button = document.createElement('button');
+                button.classList.add('option-button');
+                button.textContent = option;
+                button.addEventListener('click', () => selectOption(option));
+                optionsElement.appendChild(button);
+            });
+
+            // MathJax 랜더링
+            MathJax.typesetPromise();
+        }
+
+        // 선택지 생성
+        function generateOptions(correctAnswer) {
+            const options = [correctAnswer];
+            while (options.length < 4) {
+                let fakeAnswer = generateFakeAnswer(correctAnswer);
+                if (!options.includes(fakeAnswer)) {
+                    options.push(fakeAnswer);
+                }
+            }
+            return shuffleArray(options);
+        }
+
+        // 오답 생성
+        function generateFakeAnswer(correctAnswer) {
+            const variation = Math.floor(Math.random() * 5) + 1; // 1부터 5까지의 랜덤 수
+            const plusOrMinus = Math.random() < 0.5 ? -1 : 1;
+            if (typeof correctAnswer === 'number') {
+                return correctAnswer + variation * plusOrMinus;
+            } else {
+                // 정답이 수가 아닌 경우 (예: 분수)
+                return correctAnswer + (variation * plusOrMinus);
+            }
+        }
+
+        // 배열 셔플
+        function shuffleArray(array) {
+            const newArray = array.slice();
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        }
+
+        // 선택지 선택 시
+        function selectOption(selectedAnswer) {
+            clearInterval(questionTimer);
+            const currentQuiz = quizData[currentQuestionIndex];
+            if (selectedAnswer == currentQuiz.answer) {
+                score += difficultySettings[difficulty].points;
+                correctCount += 1;
+                if (difficulty !== '하') {
+                    speedMultiplier *= 1.01; // 시간 감소
+                }
+            } else {
+                wrongCount += 1;
+                loseLife();
+            }
+            currentQuestionIndex += 1;
+            if (currentQuestionIndex < quizData.length && lives > 0) {
+                showQuestion();
+            } else {
+                endGame();
+            }
+            updateDisplay();
+        }
+
+        // 시간 초과 처리
+        function handleTimeout() {
+            loseLife();
+            currentQuestionIndex += 1;
+            if (currentQuestionIndex < quizData.length && lives > 0) {
+                showQuestion();
+            } else {
+                endGame();
+            }
+        }
+
+        // 생명 감소
+        function loseLife() {
+            lives--;
+            updateDisplay();
+            if (lives <= 0) {
+                endGame();
+            }
+        }
+
+        // 게임 종료
+        function endGame() {
+            clearInterval(overallTimer);
+            clearInterval(questionTimer);
+            gameScreen.classList.add('hidden');
+            endScreen.classList.remove('hidden');
+            finalScore.textContent = `최종 점수: ${score}`;
+            correctCountDisplay.textContent = `정답 수: ${correctCount}`;
+            wrongCountDisplay.textContent = `오답 수: ${wrongCount}`;
+            finalTime.textContent = `총 시간: ${totalGameTime}초`;
+        }
+
+        // 다시 시작
+        restartButton.addEventListener('click', () => {
+            endScreen.classList.add('hidden');
+            startScreen.classList.remove('hidden');
+        });
+
+    </script>
+
+</body>
+</html>
